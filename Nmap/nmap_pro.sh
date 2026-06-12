@@ -1,4 +1,5 @@
 #!/bin/bash
+# Si escaneas el mismo objetivo dos veces, la marca de tiempo (_20260612_181300) evitará que borres el reporte anterior y  El archivo .xml te permitirá importar directamente los resultados a frameworks de explotación como Metasploit o generar reportes gráficos más adelante.
 # ==============================================================================
 # Script de Escaneo Avanzado con Nmap (Versión Pro)
 # ==============================================================================
