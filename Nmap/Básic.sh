@@ -1,5 +1,5 @@
 #!/bin/bash
-# Escaneo básico de red con Nmap
+# Escaneo básico de red con Nmap Pasar la IP como argumento
 
 # Verifica si el usuario introdujo una IP
 if [ -z "$1" ]; then
