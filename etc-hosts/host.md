@@ -1,4 +1,4 @@
-# README.md - Guía Completa del Archivo /etc/hosts en Auditorías de Seguridad
+# Guía Completa del Archivo /etc/hosts en Auditorías de Seguridad
 
 ## 📋 Introducción
 
