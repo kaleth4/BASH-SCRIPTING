@@ -1,0 +1,10 @@
+Instrucciones de Uso
+Guardar el archivo: Copia el código en un archivo llamado enum_hidden_configs.sh.
+Asignar permisos: Ejecuta chmod +x enum_hidden_configs.sh para darle permisos de ejecución.
+Ejecutar: Corre el script con ./enum_hidden_configs.sh.
+
+.*history: Comandos anteriores que incluyan contraseñas pasadas como argumentos (ej: mysql -u root -p'Password123').
+
+.bashrc / .zshrc: Variables de entorno (export AWS_SECRET_ACCESS_KEY="...") o alias que redirijan comandos legítimos a scripts maliciosos.
+
+.ssh/: Claves privadas desprotegidas para movimiento lateral.
