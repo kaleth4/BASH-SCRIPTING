@@ -12,14 +12,19 @@ Añade el siguiente bloque de código a tu archivo de configuración del shell (
 
 ```bash
 settarget () {
-    if [ "\$1" ] && [ "\$2" ]; then
-        echo "\$1 \$2" > ~/.config/bin/target.txt
-    elif [ "\$1" ]; then
-        echo "\$1" > ~/.config/bin/target.txt
+    # Asegura que el directorio exista cada vez que se ejecute
+    mkdir -p ~/.config/bin
+
+    if [ "$1" ] && [ "$2" ]; then
+        echo "$1 $2" > ~/.config/bin/target.txt
+    elif [ "$1" ]; then
+        echo "$1" > ~/.config/bin/target.txt
     else
         echo "No target" > ~/.config/bin/target.txt
     fi
 }
+
+~/.config/polybar/launch.sh
 ```
 
 ### Explicación Lógica del Código:
