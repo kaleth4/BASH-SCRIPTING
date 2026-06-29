@@ -1,0 +1,253 @@
+source ~/powerlevel10k/powerlevel10k.zsh-theme
+
+#To customize prompt, run `p10k configure` or edit ~/.p10k.zsh.
+[[ ! -f ~/.p10k.zsh ]] || source ~/.p10k.zsh
+
+
+# Keep 1000 lines of history within the shell and save it to ~/.zsh_history:
+HISTSIZE=1000
+SAVEHIST=1000
+HISTFILE=~/.zsh_history
+
+#Manual Configuration
+PATH=/snap/bin:/usr/sandbox/:/usr/local/bin:/usr/bin:/bin:/usr/local/games:/usr/games:/usr/share/games:/usr/local/sbin:/usr/sbin:/sbin:/usr/local/bin:/usr/bin:/bin:/usr/local/games:/usr/games
+
+# Manual aliases
+alias ls=lsd
+alias cat=bat
+alias cat='/usr/bin/cat'
+# Set 'man' colors
+function man() {
+    env \
+    LESS_TERMCAP_mb=$'\e[01;31m' \
+    LESS_TERMCAP_md=$'\e[01;31m' \
+    LESS_TERMCAP_me=$'\e[0m' \
+    LESS_TERMCAP_se=$'\e[0m' \
+    LESS_TERMCAP_so=$'\e[01;44;33m' \
+    LESS_TERMCAP_ue=$'\e[0m' \
+    LESS_TERMCAP_us=$'\e[01;32m' \
+    man "$@"
+}
+
+
+
+
+
+
+# Extract nmap information
+function extractPorts(){
+	ports="$(cat $1 | grep -oP '\d{1,5}/open' | awk '{print $1}' FS='/' | xargs | tr ' ' ',')"
+	ip_address="$(cat $1 | grep -oP '\d{1,3}\.\d{1,3}\.\d{1,3}\.\d{1,3}' | sort -u | head -n 1)"
+	echo -e "\n[*] Extracting information...\n" > extractPorts.tmp
+	echo -e "\t[*] IP Address: $ip_address"  >> extractPorts.tmp
+	echo -e "\t[*] Open ports: $ports\n"  >> extractPorts.tmp
+	echo $ports | tr -d '\n' | xclip -sel clip
+	echo -e "[*] Ports copied to clipboard\n"  >> extractPorts.tmp
+	cat extractPorts.tmp; rm extractPorts.tmp
+}
+
+
+function rmk() {
+	scrub -p dod $1
+	shred -zun 10 -v $1
+}
+
+# Función para inicializar entornos de CTF de forma dinámica
+ctf-init() {
+    if [ -z "$1" ]; then
+        echo "❌ Error: Debes proporcionar un nombre para la máquina."
+        echo "Uso: ctf-init <nombre_maquina>"
+        return 1
+    fi
+
+    # Crea la estructura usando el argumento proporcionado
+    mkdir -p "$1"/{exploit,files,notes,post,recon}
+    echo "[+] Entorno CTF creado en $(pwd)/$1"
+    cd "$1" && ls
+}
+
+settarget () {
+    # Asegura que el directorio exista cada vez que se ejecute
+    mkdir -p ~/.config/bin
+
+    if [ "$1" ] && [ "$2" ]; then
+        echo "$1 $2" > ~/.config/bin/target.txt
+    elif [ "$1" ]; then
+        echo "$1" > ~/.config/bin/target.txt
+    else
+        echo "No target" > ~/.config/bin/target.txt
+    fi
+}
+
+recon() {
+    if [ -z "$1" ]; then
+        echo "Uso: recon <IP_o_Dominio>"
+        return 1
+    fi
+    sudo nmap -p- --open -sS --min-rate 5000 -T4 -vvv -n -Pn "$1" -oG allPorts
+}
+
+vuln() {
+    # Validación: Verifica que se pase el primer argumento (Puertos)
+    if [ -z "$1" ]; then
+        echo "Error: Falta la lista de puertos."
+        echo "Uso: vuln <puertos> <IP_o_Dominio>"
+        return 1
+    fi
+
+    # Validación: Verifica que se pase el segundo argumento (IP)
+    if [ -z "$2" ]; then
+        echo "Error: Falta la IP o Dominio objetivo."
+        echo "Uso: vuln <puertos> <IP_o_Dominio>"
+        return 1
+    fi
+
+    # Ejecución optimizada para detección de versiones precisas
+    sudo nmap -sV --script vulners -p "$1" -vvv "$2" -oN vuln_scan.txt
+}
+
+enum() {
+    # Validación: Verifica que se pase el primer argumento (Puertos)
+    if [ -z "$1" ]; then
+        echo "Error: Falta la lista de puertos."
+        echo "Uso: enum <puertos> <IP_o_Dominio>"
+        return 1
+    fi
+
+    # Validación: Verifica que se pase el segundo argumento (IP)
+    if [ -z "$2" ]; then
+        echo "Error: Falta la IP o Dominio objetivo."
+        echo "Uso: enum <puertos> <IP_o_Dominio>"
+        return 1
+    fi
+
+    # Ejecución optimizada para detección de versiones precisas
+    sudo nmap -n -Pn -sCV -p "$1" --version-intensity 5 "$2" -oN targeted
+}
+
+# Función profesional para auditoría web interactiva con múltiples diccionarios de Gobuster
+web() {
+    local VERDE="\e[0;32m\e[1m"
+    local AZUL="\e[0;34m\e[1m"
+    local AMARILLO="\e[0;33m\e[1m"
+    local ROJO="\e[0;31m\e[1m"
+    local RESET="\e[0m"
+
+    echo -e "${AZUL}[+]===================================================[+]"
+    echo -e "      AUDITORÍA WEB AUTOMATIZADA CON MULTI-GOBUSTER      "
+    echo -e "[+]===================================================[+]${RESET}\n"
+
+    # Solicitar el objetivo interactivamente
+    echo -n -e "${AMARILLO}[?] Introduce la IP o Dominio del objetivo (ej. 57.128.254.142): ${RESET}"
+    read TARGET
+
+    # Validar entrada vacía
+    if [ -z "$TARGET" ]; then
+        echo -e "${ROJO}[!] Error: No introdujiste ningún objetivo. Cancelando...${RESET}"
+        return 1
+    fi
+
+    # Asegurar el protocolo http:// si no se especificó
+    if [[ ! "$TARGET" =~ ^http:// && ! "$TARGET" =~ ^https:// ]]; then
+        TARGET="http://$TARGET"
+    fi
+
+    # Listado de diccionarios secuenciales de Kali Linux
+    local WORDLISTS=(
+        "/usr/share/wordlists/dirb/common.txt"
+        "/usr/share/wordlists/dirb/big.txt"
+        "/usr/share/wordlists/dirbuster/directory-list-2.3-medium.txt"
+        "/usr/share/wordlists/seclists/Discovery/Web-Content/api-endpoints.txt"
+    )
+
+    local EXTENSIONS="json,api,txt,bak,php,html"
+    local OUTPUT_DIR="gobuster_scans"
+    mkdir -p "$OUTPUT_DIR"
+
+    echo -e "\n${VERDE}[*] Objetivo fijado: $TARGET"
+    echo -e "[*] Los resultados se guardarán en: ./${OUTPUT_DIR}/${RESET}\n"
+
+    for WORDLIST in "${WORDLISTS[@]}"; do
+        if [ -f "$WORDLIST" ]; then
+            local LIST_NAME=$(basename "$WORDLIST" .txt)
+            local OUTPUT_FILE="$OUTPUT_DIR/scan_${LIST_NAME}.txt"
+            
+            echo -e "${AZUL}[--->] Iniciando escaneo con: $WORDLIST ...${RESET}"
+            
+            # Ejecución limpia ocultando barras de progreso excesivas
+            gobuster dir -u "$TARGET" -w "$WORDLIST" -x "$EXTENSIONS" -t 50 -k -o "$OUTPUT_FILE" --quiet
+            
+            if [ -s "$OUTPUT_FILE" ]; then
+                echo -e "${VERDE}[✓] Completado. Resultados guardados en: $OUTPUT_FILE${RESET}\n"
+            else
+                echo -e "${AMARILLO}[!] Sin resultados con este diccionario.${RESET}\n"
+                rm -f "$OUTPUT_FILE"
+            fi
+        else
+            echo -e "${ROJO}[!] Saltando diccionario (No encontrado): $WORDLIST${RESET}\n"
+        fi
+    done
+
+    echo -e "${VERDE}[+] Proceso terminado con éxito.${RESET}"
+}
+
+
+
+~/.config/polybar/launch.sh
+
+# Plugins
+source /usr/share/zsh-syntax-highlighting/zsh-syntax-highlighting.zsh
+source /usr/share/zsh-autosuggestions/zsh-autosuggestions.zsh
+source /usr/share/zsh-sudo/sudo.plugin.zsh
+
+# Plugins para auditorías rápidas
+plugins=(git zsh-autosuggestions zsh-syntax-highlighting extract copypath)
+
+# Prompt minimalista táctico (estilo Wayne Enterprises)
+PROMPT='%F{240}┌─── %F{yellow}🦇 %F{000}%K{yellow} BAT-SHELL %k%F{yellow} %F{033}%~
+%F{240}└─%F{white}$ '
+
+
+# fzf improvement
+function fzf-show(){
+
+	if [ "$1" = "h" ]; then
+		fzf -m --reverse --preview-window down:20 --preview '[[ $(file --mime {}) =~ binary ]] &&
+ 	                echo {} is a binary file ||
+	                 (bat --style=numbers --color=always {} ||
+	                  highlight -O ansi -l {} ||
+	                  coderay {} ||
+	                  rougify {} ||
+	                  cat {}) 2> /dev/null | head -500'
+
+	else
+	        fzf -m --preview '[[ $(file --mime {}) =~ binary ]] &&
+	                         echo {} is a binary file ||
+	                         (bat --style=numbers --color=always {} ||
+	                          highlight -O ansi -l {} ||
+	                          coderay {} ||
+	                          rougify {} ||
+	                          cat {}) 2> /dev/null | head -500'
+	fi
+}
+
+# Banner Oficial Bat-OS 
+echo -e "\e[1;34m" # Azul eléctrico estilo monitor militar
+cat << "EOF"
+         _/\_/\_                                 
+        /       \                              
+      =(  O   O  )=                          
+        \   ^   /                              
+   _/\___/\_/_/\___/\_                     
+  /                   \                  
+
+ |  ()             ()  |               
+  \                   /                 
+   \_    _/\_/\_    _/                 
+     \_ /       \ _/                        
+       \\   ^   //                            
+         \/_/\_\/                                
+  [ KALETH - BAT_OS  ]
+                    
+EOF
+echo -e "\e[0m" # Resetea el color
